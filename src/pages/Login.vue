@@ -38,7 +38,8 @@ export default {
       email:"",
       isValidEmail:false,
       invalidEmail:false,
-      emptyEmail:false
+      emptyEmail:false,
+      isLogin:false
     }
   },
   components:{
@@ -49,20 +50,24 @@ export default {
   },
   methods:{
     login(){
+      localStorage.setItem('isLogin',this.isLogin)
       if(this.email !== '') {
         axios.get('https://jsonplaceholder.typicode.com/users').then((res) => {
           let userData = res.data
           localStorage.setItem('usersDetails',JSON.stringify(userData))
           this.$store.dispatch('setUserDetails',userData)
-          userData.map((data) => {
-            if (data.email === this.email) {
-              this.$store.dispatch('setCurrentUserDetail',data.email)
-              localStorage.setItem('currentUserData',JSON.stringify(data))
-              this.$router.push({path:`/home`})
-            } else {
-              this.invalidEmail = true
-            }
-          })
+          let currentData = userData.find((data)=>data.email == this.email)
+
+         if(currentData){
+           this.$store.dispatch('setCurrentUserDetail',currentData.email)
+             localStorage.setItem('currentUserData',JSON.stringify(currentData))
+           this.isLogin = true
+           localStorage.setItem('isLogin',this.isLogin)
+           this.$router.push({path:'/home'})
+         }else{
+           localStorage.setItem('isLogin',false)
+           this.invalidEmail = true
+         }
         }).catch((err) => {
           console.log("err", err)
         })
@@ -76,6 +81,11 @@ export default {
       const regex = /^\w+([-]?\w+)*@\w+([-]?\w+)*(\.\w{2,3})+$/
       const validCreditCard = regex.test(this.email)
       this.isValidEmail = validCreditCard
+    }
+  },
+  mounted() {
+    if(localStorage.getItem('isLogin')){
+      this.$router.push('/home')
     }
   }
 }

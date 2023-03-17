@@ -11,6 +11,7 @@ Vue.use(VueRouter)
 const router = new VueRouter({
 routes:Routes
 })
+
 Vue.config.productionTip = false
 Vue.use(axios);
 

@@ -1,5 +1,6 @@
 
-export default [
+
+const router = [
   {
     path: "/",
     name:"login",
@@ -8,9 +9,12 @@ export default [
       {
         path: '/home',
         name: 'home',
-        component: () => import('@/components/Home')
+        component: () => import('@/components/Home'),
+        meta:{ auth : false}
       },
 ]
 
+
+export default router
 
 
