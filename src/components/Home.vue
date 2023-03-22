@@ -1,203 +1,172 @@
 <template>
   <div>
-    <div>
-      <b-card no-body>
-        <b-tabs card pills>
-          <b-tab active title="Create post">
-            <div>
-              <b-card
-                  :title=userName
-                  class="mb-2"
-                  img-alt="Image"
-                  img-src="https://picsum.photos/600/300/?image=25"
-                  img-top
-                  style="max-width: 20rem;"
-                  tag="article"
-              >
-                <b-form-input v-model="postTitle" class="mb-4" placeholder="Enter post title..."></b-form-input>
-                <b-form-textarea
-                    id="textarea2"
-                    v-model="postData"
-                    max-rows="6"
-                    placeholder="Enter post body..."
-                    rows="3"
-                >
-                </b-form-textarea>
-                <b-button class="mt-4" href="#" variant="primary" @click="uploadPost()">Add post</b-button>
-              </b-card>
-            </div>
-          </b-tab>
-          <b-tab title="View all posts" @click="getAllPosts()">
-            <div v-for="(posts,i) in totalUsersPost" :key="i" class="mb-5">
-              <b-card
-                  class="mb-2"
-                  img-alt="Image"
-                  img-src="https://picsum.photos/600/300/?image=25"
-                  img-top
-                  style="max-width: 20rem;"
-                  tag="article"
-              >
-                <span class="text-left fw-bold">{{ posts.title }}</span>
-                <span class="text-left d-block mt-2">{{ posts.body }}</span>
-                <b-form-textarea
-                    id="textarea"
-                    v-model="posts.comments"
-                    max-rows="6"
-                    placeholder="Write comment here..."
-                    rows="3"
-                >
-                </b-form-textarea>
-                <b-button class="mt-4" href="#" variant="primary" @click="addGlobalComment(posts.id,posts.comments)">Add comment
-                </b-button>
-                <b-button class="mt-4 text-left d-block" href="#" variant="primary"
-                            >view
-<!--                  {{ !isViewComments ? 'View comments' : 'Hide comments' }}-->
-                </b-button>
+     <div>
+       <b-card>
+         <b-container fluid>
+           <b-row class="justify-content-end">
+             <b-col class="my-1 d-flex justify-content-end">
+               <b-form-group
+                   label="Per page"
+                   label-for="per-page-select"
+                   class="add-btn"
+               >
+                 <b-form-select
+                     class="add-select"
+                     id="per-page-select"
+                     v-model="perPage"
+                     :options="pageOptions"
+                 ></b-form-select>
+               </b-form-group>
+               <b-button class="add-btn" @click="adddata()">
+                 Add
+               </b-button>
+             </b-col>
+           </b-row>
+           <div class="spin" v-if="isLoading">
+             <b-spinner class="text-primary"></b-spinner>
+           </div>
+           <div v-else>
+             <b-table
+                 :items="items"
+                 :fields="fields"
+                 :current-page="currentPage"
+                 :per-page="perPage"
+                 :sort-by.sync="sortBy"
+                 :sort-desc.sync="sortDesc"
+                 :sort-direction="sortDirection"
+                 stacked="md"
+                 show-empty
+                 responsive
+                 @filtered="onFiltered"
+             >
 
-                <div v-for="(comments,i) in allCommentsOfPost" :key="i">
-                  <span v-if="isViewComments">{{ comments.comments }}</span>
-                </div>
-              </b-card>
-            </div>
-          </b-tab>
-          <b-tab title="My posts" @click="getMyPosts()">
-            <div v-if="currentUsersPost">
-                <div v-for="(data,index) in currentUsersPost" :key="index" class="mb-5">
-                  <b-card
-                      class="mb-2"
-                      img-alt="Image"
-                      img-src="https://picsum.photos/600/300/?image=25"
-                      img-top
-                      style="max-width: 20rem;"
-                      tag="article"
-                  >
-                    <span class="text-left fw-bold">{{ data.title }}</span>
-                    <span class="text-left d-block mt-2">{{ data.body }}</span>
-                    <b-form-textarea
-                        id="textarea3"
-                        v-model="data.comments"
-                        max-rows="6"
-                        placeholder="Write comment here..."
-                        rows="3"
-                    >
-                    </b-form-textarea>
-                    <b-button class="mt-4" href="#" variant="primary" @click="addMyPostComment(index,data.comments)">Add comment
-                    </b-button>
-                    <div v-for="(comments,i) in myPostsComments" :key="i">
-                      <span>{{ comments.comments }}</span>
-                    </div>
-                  </b-card>
-                </div>
-            </div>
-            <div v-else>
-              <h1 class="mt-5">No post available</h1>
-            </div>
-          </b-tab>
-          <b-tab class="text-end" title="Logout" @click="logout()">
-          </b-tab>
-        </b-tabs>
-      </b-card>
-    </div>
+               <template #cell(id)="row">
+                 {{row.value}}
+
+               </template>
+               <template #cell(title)="row">
+                 {{row.value}}
+               </template>
+
+               <template #cell(actions)="row">
+                 <b-button size="sm" @click="detailPage(row.item.id,row.item.userId,row.item.title)" class="btn-action">
+                   Show Details
+                 </b-button>
+                 <b-button size="sm" @click="editPage(row.item.id,row.item.userId,row.item.title,row.item.body)" class="btn-action">
+                   Edit
+                 </b-button>
+                 <b-button size="sm" @click="deleteData(row.item.id,row)">
+                   Delete
+                 </b-button>
+               </template>
+             </b-table>
+           </div>
+         </b-container>
+         <b-row class="justify-content-end">
+           <b-col sm="7" md="6" class="my-1">
+             <b-pagination
+                 v-model="currentPage"
+                 :total-rows="totalRows"
+                 :per-page="perPage"
+                 align="fill"
+                 size="sm"
+                 class="my-0"
+             >
+             </b-pagination>
+           </b-col>
+         </b-row>
+       </b-card>
+     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
 import {
-  BCard,
-  BTab,
-  BTabs,
-  BButton,
-  BFormTextarea,
-  BFormInput
-} from 'bootstrap-vue'
+    BCard,
+    BCol,
+    BRow,
+    BFormGroup,
+    BContainer,
+    BButton,
+    BPagination,
+    BFormSelect,
+    BTable,
+    BSpinner
 
+} from 'bootstrap-vue'
 export default {
-  name: "user-home",
+  name:"home-page",
   data() {
     return {
-      postData: "",
-      userName: "",
-      currentUserData: null,
-      postTitle: "",
-      postComment: "",
-      postMyComment: "",
-      totalUsersPost: [],
-      currentUsersPost: [],
-      allCommentsOfPost: [],
-      myPostsComments: [],
-      isViewComments: false,
-      comments:[],
-      isLogin:localStorage.getItem('isLogin')
+      items:[],
+      fields : [
+        {key: 'id', label: 'id',sortable: true},
+        { key: 'title',label: 'title', sortable: true },
+        {key: 'actions'},
+      ],
+      totalRows: 1,
+      currentPage: 1,
+      perPage: 5,
+      pageOptions: [5, 10, 15, { value: 100, text: "Show a lot" }],
+      sortBy: '',
+      sortDesc: false,
+      sortDirection: 'asc',
+      filter: null,
+      filterOn: [],
+      isLoading:true
     }
   },
-  components: {
+  components:{
     BCard,
-    BTab,
-    BTabs,
+    BCol,
+    BRow,
+    BFormGroup,
+    BContainer,
     BButton,
-    BFormTextarea,
-    BFormInput
+    BPagination,
+    BFormSelect,
+    BTable,
+    BSpinner
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     getAllPosts() {
-      axios.get(`https://jsonplaceholder.typicode.com/posts`).then((res) => {
-
-        let response = res.data.sort((a, b) => b.id - a.id)
-        this.totalUsersPost = [...response]
-
+        axios.get(`https://jsonplaceholder.typicode.com/posts`).then((res) => {
+          this.isLoading = false
+          this.items = res.data
+          this.totalRows = this.items.length
       })
     },
-    addMyPostComment(id,comment) {
-      this.this.currentUsersPost.forEach(function (element,i) {
-        if(i == id) {
-          element.comment =comment
-        }
-
-      })
-         let res =  this.currentUsersPost[id].myComments.push({comment:comment})
-         this.currentUsersPost = [...res]
-          this.postMyComment = ''
-           this.$store.dispatch('setMyComments', this.myPostsComments)
+    detailPage(id,uId,title){
+      localStorage.setItem('id',id)
+      localStorage.setItem('uId',uId)
+      localStorage.setItem('title',title)
+      this.$router.push({ name: "details", params: {id:id,uId:uId,title:title}})
     },
-    getMyPosts() {
-      this.currentUsersPost = JSON.parse(localStorage.getItem('myPosts'))
-      console.log("postss",this.currentUsersPost)
-
+    editPage(id,uId,title,body){
+      localStorage.setItem('id',id)
+      localStorage.setItem('uId',uId)
+      localStorage.setItem('title',title)
+      localStorage.setItem('body',body)
+      this.$router.push({ name: "editdetail", params: {id:id,uId:uId,title:title,body:body}})
     },
-    logout() {
-      if (confirm('Are you sure you want to logout?')) {
-        localStorage.clear();
-        this.$router.push({path: `/`})
+    deleteData(id){
+      if (confirm('Are you sure you want to delete this post?')) {
+        axios.delete(`https://jsonplaceholder.typicode.com/posts/${id}`).then(() => {
+          alert("Post is deleted successfully!")
+        })
       }
     },
-    uploadPost() {
-      let array = []
-      const requestBody = {
-        userId: this.currentUserData.id,
-        title: this.postTitle,
-        body: this.postData,
-        myComments:array
-      }
-      if (this.postData !== '' && this.postTitle !== '') {
-        axios.post("https://jsonplaceholder.typicode.com/posts", requestBody)
-            .then(() => {
-                 let postArray = JSON.parse(localStorage.getItem('myPosts')) || [];
-                 postArray.push(requestBody)
-                 localStorage.setItem('myPosts',JSON.stringify(postArray))
-                  this.postTitle = '',
-                  this.postData = ''
-                  alert("Posted successful")
-            });
-      }
+    adddata(){
+      this.$router.push('/add')
     }
   },
   mounted() {
-    if(!this.isLogin){
-      this.$router.push('/')
-    }
-    this.currentUserData = JSON.parse(localStorage.getItem('currentUserData'))
-    this.userName = JSON.parse(localStorage.getItem('currentUserData')).name
+    this.getAllPosts()
   },
 }
 </script>
@@ -205,5 +174,23 @@ export default {
 <style scoped>
 .card{
   margin: 0 auto;
+}
+.btn-action{
+  margin-right: 12px !important;
+}
+.spin{
+  height:150px;
+  margin: 0 auto;
+}
+.spin span{
+  width: 70px;
+  height:70px;
+}
+.add-btn{
+  width: 200px;
+  padding: 3px;
+}
+.add-select{
+  width: 150px;
 }
 </style>
